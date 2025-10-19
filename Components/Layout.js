@@ -5,7 +5,7 @@ export default function Layout({ children }) {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} >
-        <StatusBar barStyle="light-content" backgroundColor="#0051caff" />
+        <StatusBar barStyle="light-content" backgroundColor="#ca00c0ff" />
         <View style={styles.body} >
             {children}
         </View>
