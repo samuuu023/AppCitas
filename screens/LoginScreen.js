@@ -1,41 +1,70 @@
-import { useState } from 'react';
-import { Layout, Input, ButtonRounded } from '../components';
+// Screens/LoginScreen.js
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function LoginScreen() {
-    const [email, setEmail] = useState('');
-    const [clave, setClave] = useState('');
+  const navigation = useNavigation();
+  const [correo, setCorreo] = useState("");
+  const [password, setPassword] = useState("");
 
-    return (
-        <Layout>
-            <View style={styles.container}>
-                <Text style={styles.title}>Academia Patty</Text>
-                <Text style={styles.welcomeTitle}>Bienvenido</Text>
-                <Text style={styles.subtitle}>Inicie sesión para administrar sus citas.</Text>
-                
-                <View style={styles.inputContainer}>
-                    <Input 
-                        label="Correo Electrónico"
-                        placeholder=""
-                        type="email-address"
-                        value={email}
-                        onChangeText={setEmail}
-                    />
-                    <Input 
-                        label="Contraseña"
-                        placeholder=""
-                        hideText={true}
-                        value={clave}
-                        onChangeText={setClave}
-                    />
-                </View>
+  const handleLogin = () => {
+    if (correo === "samuel@example.com" && password === "12345") {
+      navigation.replace("AppTabs"); // te lleva al menú principal
+    } else if (correo && password) {
+      alert("Credenciales incorrectas");
+    } else {
+      alert("Completa todos los campos");
+    }
+  };
 
-                <TouchableOpacity>
-                    <Text style={styles.forgotPassword}>¿Olvidó su contraseña?</Text>
-                </TouchableOpacity>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Bienvenido</Text>
+      <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
-                <ButtonRounded title="Iniciar Sesión" />    
-            </View>
-        </Layout>
-    );
+      <TextInput
+        placeholder="Correo electrónico"
+        placeholderTextColor="#9CA3AF"
+        style={styles.input}
+        value={correo}
+        onChangeText={setCorreo}
+      />
+
+      <TextInput
+        placeholder="Contraseña"
+        placeholderTextColor="#9CA3AF"
+        style={styles.input}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Ingresar</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+        <Text style={styles.link}>¿No tienes cuenta? Regístrate</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f7f6f8", padding: 20 },
+  title: { fontSize: 30, fontWeight: "900", color: "#111827", marginBottom: 10 },
+  subtitle: { fontSize: 16, color: "#6B7280", marginBottom: 30 },
+  input: {
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: "white",
+    marginBottom: 15,
+  },
+  button: { backgroundColor: "#a413ec", padding: 14, borderRadius: 10, width: "100%", alignItems: "center" },
+  buttonText: { color: "white", fontWeight: "700", fontSize: 16 },
+  link: { marginTop: 15, color: "#a413ec", fontWeight: "500" },
+});
