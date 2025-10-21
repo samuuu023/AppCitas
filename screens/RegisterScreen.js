@@ -1,6 +1,7 @@
 // Screens/RegisterScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 
 export default function RegisterScreen() {

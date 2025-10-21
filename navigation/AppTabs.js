@@ -17,6 +17,17 @@ export default function AppTabs() {
         headerShown: false,
         tabBarActiveTintColor: "#a413ec",
         tabBarInactiveTintColor: "gray",
+        tabBarStyle: {
+          backgroundColor: "#fff",
+          borderTopWidth: 0.5,
+          borderTopColor: "#ccc",
+          height: 60,
+          paddingBottom: 5,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
         tabBarIcon: ({ color, size }) => {
           let iconName = "ellipse";
           if (route.name === "Service") iconName = "home-outline";

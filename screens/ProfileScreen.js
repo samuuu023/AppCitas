@@ -1,56 +1,77 @@
-// Screens/PerfilScreen.js
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+// screens/ProfileScreen.js
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
 
-  const handleLogout = () => {
-    alert("Sesión cerrada");
-    navigation.replace("Login");
-  };
+  const [appointments, setAppointments] = useState([
+    { id: "1", category: "Barbería", service: "Corte Clásico", date: "2025-10-25T10:00:00", status: "Próxima" },
+    { id: "2", category: "Spa", service: "Masaje Relajante", date: "2025-09-30T14:00:00", status: "Pasada" },
+    { id: "3", category: "Salón de Belleza", service: "Manicure", date: "2025-10-20T16:00:00", status: "Hoy" },
+  ]);
+
+  const renderItem = ({ item }) => (
+    <View style={styles.item}>
+      <Text style={styles.itemText}>{item.category} - {item.service}</Text>
+      <Text style={styles.dateText}>
+        {new Date(item.date).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+      </Text>
+      <Text style={styles.status}>{item.status}</Text>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mi Perfil</Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Mi Perfil</Text>
+        <Text style={styles.subtitle}>Samuel Orellana</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Nombre:</Text>
-        <Text style={styles.value}>Samuel Orellana</Text>
+        <Text style={styles.label}>Historial de Citas</Text>
 
-        <Text style={styles.label}>Correo:</Text>
-        <Text style={styles.value}>samuel@example.com</Text>
+        <FlatList
+          data={appointments}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ marginTop: 10 }}
+        />
 
-        <Text style={styles.label}>Teléfono:</Text>
-        <Text style={styles.value}>+503 7000-0000</Text>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={() => navigation.replace("Login")}
+        >
+          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>Cerrar sesión</Text>
-      </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f7f6f8", padding: 20 },
-  title: { fontSize: 26, fontWeight: "800", color: "#111827", textAlign: "center", marginBottom: 25 },
-  card: {
+  safe: { flex: 1, backgroundColor: "#f7f6f8" },
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 26, fontWeight: "800", color: "#111827", textAlign: "center" },
+  subtitle: { textAlign: "center", color: "#6B7280", marginBottom: 20 },
+  label: { fontSize: 18, fontWeight: "700", color: "#111827" },
+  item: {
     backgroundColor: "#fff",
     borderRadius: 10,
-    padding: 20,
-    elevation: 3,
+    padding: 15,
+    marginVertical: 6,
+    elevation: 2,
   },
-  label: { color: "#6B7280", fontWeight: "600", marginTop: 10 },
-  value: { fontSize: 16, fontWeight: "700", color: "#111827" },
-  button: {
+  itemText: { fontSize: 16, fontWeight: "600", color: "#111827" },
+  dateText: { color: "#6B7280", marginTop: 4 },
+  status: { marginTop: 4, fontWeight: "700", color: "#a413ec" },
+  logoutButton: {
     backgroundColor: "#a413ec",
     padding: 14,
     borderRadius: 10,
-    width: "100%",
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 20,
   },
-  buttonText: { color: "white", fontWeight: "700", fontSize: 16 },
+  logoutText: { color: "white", fontWeight: "700", fontSize: 16 },
 });
+

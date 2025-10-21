@@ -1,6 +1,7 @@
 // Screens/LoginScreen.js
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 
 export default function LoginScreen() {
@@ -10,7 +11,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (correo === "samuel@example.com" && password === "12345") {
-      navigation.replace("AppTabs"); // te lleva al menú principal
+      navigation.replace("AppTabs"); //menú principal 
     } else if (correo && password) {
       alert("Credenciales incorrectas");
     } else {

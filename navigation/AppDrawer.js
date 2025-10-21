@@ -1,5 +1,6 @@
 // navigation/AppDrawer.js (opcional)
 import React from "react";
+import { Ionicons } from '@expo/vector-icons';
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import AppTabs from "./AppTabs";
 import ProfileScreen from "../screens/ProfileScreen";
