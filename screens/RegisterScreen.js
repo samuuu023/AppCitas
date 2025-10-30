@@ -7,47 +7,56 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../api/firebase.js"; // 👈 tu conexión
+import { auth, db } from "../api/firebase.js"; // 👈 tu configuración de Firebase
 
-export default function RegisterScreen({ navigation }) {
-  const [nombre, setNombre] = useState("");
+export default function RegisterScreen() {
+  const navigation = useNavigation();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleRegister = async () => {
-    if (!nombre || !email || !password) {
+    if (!name || !email || !password) {
       Alert.alert("Error", "Por favor completa todos los campos.");
       return;
     }
 
     try {
       // 🔐 Crear usuario en Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 🧾 Crear documento en Firestore (colección "usuarios")
+      // 🧾 Guardar datos del usuario en Firestore
       await setDoc(doc(db, "usuarios", user.uid), {
-        nombre,
+        nombre: name,
         correo: email,
-        rol: "usuario",
         creado: new Date().toISOString(),
+        rol: "usuario",
       });
 
-      Alert.alert("Éxito", "Usuario registrado correctamente.");
-      navigation.navigate("Service");
+      Alert.alert("Registro exitoso", "Tu cuenta ha sido creada correctamente.", [
+        {
+          text: "Continuar",
+          onPress: () => {
+            // 🔹 Redirigir al AppTabs
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AppTabs", params: { screen: "Service" } }],
+            });
+          },
+        },
+      ]);
     } catch (error) {
+      // ⚠️ Manejo de errores comunes
       if (error.code === "auth/email-already-in-use") {
         Alert.alert("Error", "Este correo ya está registrado.");
       } else if (error.code === "auth/invalid-email") {
-        Alert.alert("Error", "Correo inválido.");
+        Alert.alert("Error", "Correo electrónico inválido.");
       } else if (error.code === "auth/weak-password") {
-        Alert.alert("Error", "La contraseña es demasiado débil.");
+        Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres.");
       } else {
         Alert.alert("Error", error.message);
       }
@@ -56,13 +65,13 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crear Cuenta</Text>
+      <Text style={styles.title}>Crear cuenta</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Nombre completo"
-        value={nombre}
-        onChangeText={setNombre}
+        value={name}
+        onChangeText={setName}
       />
 
       <TextInput
@@ -70,8 +79,8 @@ export default function RegisterScreen({ navigation }) {
         placeholder="Correo electrónico"
         value={email}
         onChangeText={setEmail}
-        autoCapitalize="none"
         keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       <TextInput
@@ -83,12 +92,12 @@ export default function RegisterScreen({ navigation }) {
       />
 
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Registrarse</Text>
+        <Text style={styles.buttonText}>Registrarme</Text>
       </TouchableOpacity>
 
-      <Text style={styles.link} onPress={() => navigation.navigate("Login")}>
-        ¿Ya tienes cuenta? Inicia sesión
-      </Text>
+      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+        <Text style={styles.linkText}>¿Ya tienes cuenta? Inicia sesión</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -96,40 +105,42 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "#fff",
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 25,
-    textAlign: "center",
-    color: "#111",
+    marginBottom: 30,
+    color: "#a413ec",
   },
   input: {
-    borderWidth: 1,
+    width: "100%",
+    height: 50,
     borderColor: "#ccc",
-    padding: 12,
+    borderWidth: 1,
     borderRadius: 10,
+    paddingHorizontal: 15,
     marginBottom: 15,
-    fontSize: 16,
   },
   button: {
     backgroundColor: "#a413ec",
-    padding: 15,
+    paddingVertical: 15,
+    width: "100%",
     borderRadius: 10,
     alignItems: "center",
+    marginBottom: 10,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "600",
+    fontSize: 16,
   },
-  link: {
-    textAlign: "center",
+  linkText: {
     color: "#a413ec",
-    marginTop: 20,
-    fontSize: 15,
+    fontSize: 14,
+    marginTop: 10,
   },
 });
