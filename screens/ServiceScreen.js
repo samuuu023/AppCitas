@@ -1,107 +1,44 @@
 // screens/ServiceScreen.js
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
-export default function ServiceScreen() {
-  const navigation = useNavigation();
-
-  // Lista de categorías (servicios)
-  const services = [
-    {
-      id: 1,
-      name: "Barbería", // 👈 corregido (antes "Cool Barber Shop")
-      icon: "cut-outline",
-      color: "#a413ec",
-    },
-    {
-      id: 2,
-      name: "Salón de Belleza",
-      icon: "color-palette-outline",
-      color: "#a413ec",
-    },
-    {
-      id: 3,
-      name: "Spa", // 👈 coincide con BookingScreen
-      icon: "flower-outline",
-      color: "#a413ec",
-    },
+export default function ServiceScreen({ navigation }) {
+  const categories = [
+    { id: "barberia", name: "Barbería", icon: "cut-outline", color: "#6A1B9A" },
+    { id: "spa", name: "Spa", icon: "flower-outline", color: "#00897B" },
+    { id: "salon", name: "Salón de Belleza", icon: "color-palette-outline", color: "#D81B60" },
   ];
 
-  // Enviar categoría a BookingScreen
-  const handleSelectCategory = (category) => {
-    navigation.navigate("Booking", { category }); // ✅ parámetro correcto
-  };
-
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Elige tu servicio</Text>
-
-        <View style={styles.grid}>
-          {services.map((service) => (
-            <TouchableOpacity
-              key={service.id}
-              style={styles.card}
-              onPress={() => handleSelectCategory(service.name)}
-            >
-              <Ionicons
-                name={service.icon}
-                size={50}
-                color={service.color}
-                style={{ marginBottom: 10 }}
-              />
-              <Text style={styles.serviceName}>{service.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Selecciona una categoría</Text>
+      {categories.map((cat) => (
+        <TouchableOpacity
+          key={cat.id}
+          style={[styles.card, { borderColor: cat.color }]}
+          onPress={() => navigation.navigate("Booking", { categoria: cat.id })}
+        >
+          <Ionicons name={cat.icon} size={45} color={cat.color} />
+          <Text style={styles.cardText}>{cat.name}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#f7f6f8",
-  },
-  container: {
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 40,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 30,
-  },
-  grid: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    flexWrap: "wrap",
-  },
+  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20, backgroundColor: "#fff" },
+  title: { fontSize: 22, fontWeight: "bold", marginBottom: 25, color: "#333" },
   card: {
-    width: "40%",
-    backgroundColor: "#fff",
-    paddingVertical: 30,
-    borderRadius: 12,
+    width: "90%",
+    borderWidth: 2,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 3,
-    marginVertical: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
+    backgroundColor: "#f9f9f9",
+    elevation: 4,
   },
-  serviceName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#111827",
-    textAlign: "center",
-  },
+  cardText: { fontSize: 18, fontWeight: "600", marginTop: 10, color: "#333" },
 });

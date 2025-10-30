@@ -1,71 +1,114 @@
-// Screens/LoginScreen.js
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../api/firebase.js";
 
-export default function LoginScreen() {
-  const navigation = useNavigation();
-  const [correo, setCorreo] = useState("");
+export default function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    if (correo === "samuel@example.com" && password === "12345") {
-      navigation.replace("AppTabs"); //menú principal 
-    } else if (correo && password) {
-      alert("Credenciales incorrectas");
-    } else {
-      alert("Completa todos los campos");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Error", "Por favor ingresa correo y contraseña.");
+      return;
+    }
+
+    try {
+      // 🔐 Iniciar sesión en Firebase
+      await signInWithEmailAndPassword(auth, email, password);
+      Alert.alert("Bienvenido", "Inicio de sesión exitoso.");
+
+      // ✅ Navegar a las pestañas principales
+      navigation.replace("AppTabs");
+    } catch (error) {
+      if (error.code === "auth/invalid-credential") {
+        Alert.alert("Error", "Correo o contraseña incorrectos.");
+      } else if (error.code === "auth/user-not-found") {
+        Alert.alert("Error", "Usuario no encontrado.");
+      } else if (error.code === "auth/wrong-password") {
+        Alert.alert("Error", "Contraseña incorrecta.");
+      } else {
+        Alert.alert("Error", error.message);
+      }
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido</Text>
-      <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+      <Text style={styles.title}>Iniciar Sesión</Text>
 
       <TextInput
-        placeholder="Correo electrónico"
-        placeholderTextColor="#9CA3AF"
         style={styles.input}
-        value={correo}
-        onChangeText={setCorreo}
+        placeholder="Correo electrónico"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
-        placeholder="Contraseña"
-        placeholderTextColor="#9CA3AF"
         style={styles.input}
-        secureTextEntry
+        placeholder="Contraseña"
         value={password}
         onChangeText={setPassword}
+        secureTextEntry
       />
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Ingresar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-        <Text style={styles.link}>¿No tienes cuenta? Regístrate</Text>
-      </TouchableOpacity>
+      <Text style={styles.link} onPress={() => navigation.navigate("Register")}>
+        ¿No tienes cuenta? Regístrate
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f7f6f8", padding: 20 },
-  title: { fontSize: 30, fontWeight: "900", color: "#111827", marginBottom: 10 },
-  subtitle: { fontSize: 16, color: "#6B7280", marginBottom: 30 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 25,
+    textAlign: "center",
+    color: "#111",
+  },
   input: {
-    width: "100%",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 10,
     padding: 12,
-    backgroundColor: "white",
+    borderRadius: 10,
     marginBottom: 15,
+    fontSize: 16,
   },
-  button: { backgroundColor: "#a413ec", padding: 14, borderRadius: 10, width: "100%", alignItems: "center" },
-  buttonText: { color: "white", fontWeight: "700", fontSize: 16 },
-  link: { marginTop: 15, color: "#a413ec", fontWeight: "500" },
+  button: {
+    backgroundColor: "#a413ec",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  link: {
+    textAlign: "center",
+    color: "#a413ec",
+    marginTop: 20,
+    fontSize: 15,
+  },
 });

@@ -16,11 +16,11 @@ export default function AppTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: "#a413ec",
-        tabBarInactiveTintColor: "gray",
+        tabBarInactiveTintColor: "#8e8e8e",
         tabBarStyle: {
           backgroundColor: "#fff",
           borderTopWidth: 0.5,
-          borderTopColor: "#ccc",
+          borderTopColor: "#ddd",
           height: 60,
           paddingBottom: 5,
         },
@@ -29,19 +29,47 @@ export default function AppTabs() {
           fontWeight: "600",
         },
         tabBarIcon: ({ color, size }) => {
-          let iconName = "ellipse";
-          if (route.name === "Service") iconName = "home-outline";
-          else if (route.name === "Booking") iconName = "calendar-outline";
-          else if (route.name === "Details") iconName = "information-circle-outline";
-          else if (route.name === "Profile") iconName = "person-outline";
+          let iconName = "home-outline";
+
+          switch (route.name) {
+            case "Service":
+              iconName = "home-outline";
+              break;
+            case "Booking":
+              iconName = "calendar-outline";
+              break;
+            case "Details":
+              iconName = "information-circle-outline";
+              break;
+            case "Profile":
+              iconName = "person-outline";
+              break;
+          }
+
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Service" component={ServiceScreen} options={{ title: "Menú" }} />
-      <Tab.Screen name="Booking" component={BookingScreen} options={{ title: "Agendar" }} />
-      <Tab.Screen name="Details" component={DetailsScreen} options={{ title: "Detalles" }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Perfil" }} />
+      <Tab.Screen
+        name="Service"
+        component={ServiceScreen}
+        options={{ title: "Inicio" }}
+      />
+      <Tab.Screen
+        name="Booking"
+        component={BookingScreen}
+        options={{ title: "Agendar" }}
+      />
+      <Tab.Screen
+        name="Details"
+        component={DetailsScreen}
+        options={{ title: "Detalles" }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: "Perfil" }}
+      />
     </Tab.Navigator>
   );
 }

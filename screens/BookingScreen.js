@@ -1,194 +1,202 @@
-// screens/BookingScreen.js
 import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
+  Alert,
   StyleSheet,
-  FlatList,
   Platform,
+  ScrollView,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { db, auth } from "../api/firebase.js";
+import { addDoc, collection } from "firebase/firestore";
 
-export default function BookingScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { category } = route.params || { category: "Barbería" };
+export default function BookingScreen({ route, navigation }) {
+  const { categoria } = route.params || {};
+  const [servicio, setServicio] = useState("");
+  const [profesional, setProfesional] = useState("");
+  const [fecha, setFecha] = useState(new Date());
+  const [hora, setHora] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // Listas según la categoría
-  const serviceOptions = {
-    Barbería: ["Corte Clásico", "Afeitado Premium", "Tinte de Barba"],
-    "Salón de Belleza": ["Corte de Cabello", "Manicure", "Maquillaje Profesional"],
-    Spa: ["Masaje Relajante", "Exfoliación", "Terapia de Piedras Calientes"],
+  const servicios = {
+    barberia: ["Corte de cabello", "Afeitado", "Cejas"],
+    spa: ["Masaje relajante", "Exfoliación", "Facial"],
+    salon: ["Manicure", "Pedicure", "Tinte de cabello"],
   };
 
-  const staffOptions = {
-    Barbería: ["Carlos", "Luis", "Andrés"],
-    "Salón de Belleza": ["Sofía", "Camila", "Valeria"],
-    Spa: ["Daniela", "Roberto", "Melissa"],
+  const profesionales = {
+    barberia: ["Carlos", "Mateo"],
+    spa: ["Lucía", "Sofía"],
+    salon: ["Valeria", "Ana"],
   };
 
-  const [service, setService] = useState(null);
-  const [staff, setStaff] = useState(null);
-  const [date, setDate] = useState(new Date());
-  const [showPicker, setShowPicker] = useState(false);
-
-  const onChangeDate = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShowPicker(false);
-    setDate(currentDate);
-  };
-
-  const handleConfirm = () => {
-    if (!service || !staff || !date) {
-      alert("Por favor completa todos los campos.");
+  const handleAgendar = async () => {
+    if (!servicio || !profesional || !fecha || !hora) {
+      Alert.alert("Error", "Completa todos los campos");
       return;
     }
 
-    navigation.navigate("Details", {
-      category,
-      service,
-      staff,
-      date: date.toISOString(),
-    });
+    try {
+      const user = auth.currentUser;
+      const fechaSeleccionada = fecha.toLocaleDateString();
+      const horaSeleccionada = hora.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+      await addDoc(collection(db, "citas"), {
+        uid: user.uid,
+        categoria,
+        servicio,
+        profesional,
+        fecha: fechaSeleccionada,
+        hora: horaSeleccionada,
+        fechaCreacion: new Date().toISOString(),
+      });
+
+      Alert.alert("Cita agendada con éxito");
+      navigation.navigate("Details", {
+        categoria,
+        servicio,
+        profesional,
+        fecha: fechaSeleccionada,
+        hora: horaSeleccionada,
+      });
+    } catch (error) {
+      Alert.alert("Error al agendar", error.message);
+    }
+  };
+
+  const onChangeFecha = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) setFecha(selectedDate);
+  };
+
+  const onChangeHora = (event, selectedTime) => {
+    setShowTimePicker(false);
+    if (selectedTime) setHora(selectedTime);
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Agendar Cita</Text>
-        <Text style={styles.subtitle}>Categoría: {category}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.title}>Agendar en {categoria?.toUpperCase()}</Text>
 
-        {/* Servicios */}
-        <Text style={styles.label}>Selecciona un servicio:</Text>
-        <FlatList
-          horizontal
-          data={serviceOptions[category] || []}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 10 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.option,
-                service === item && styles.selectedOption,
-              ]}
-              onPress={() => setService(item)}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  service === item && styles.selectedOptionText,
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
+        <View style={styles.card}>
+          <Picker selectedValue={servicio} onValueChange={(v) => setServicio(v)}>
+            <Picker.Item label="Selecciona un servicio" value="" />
+            {servicios[categoria]?.map((s) => (
+              <Picker.Item key={s} label={s} value={s} />
+            ))}
+          </Picker>
+
+          <Picker
+            selectedValue={profesional}
+            onValueChange={(v) => setProfesional(v)}
+          >
+            <Picker.Item label="Selecciona un profesional" value="" />
+            {profesionales[categoria]?.map((p) => (
+              <Picker.Item key={p} label={p} value={p} />
+            ))}
+          </Picker>
+
+          {/* Selector de fecha */}
+          <TouchableOpacity
+            style={styles.selector}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.selectorText}>
+              📅 Fecha: {fecha.toLocaleDateString()}
+            </Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={fecha}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={onChangeFecha}
+              minimumDate={new Date()}
+            />
           )}
-        />
 
-        {/* Personal disponible */}
-        <Text style={[styles.label, { marginTop: 20 }]}>
-          Personal disponible:
-        </Text>
-        <FlatList
-          horizontal
-          data={staffOptions[category] || []}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 10 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.option, staff === item && styles.selectedOption]}
-              onPress={() => setStaff(item)}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  staff === item && styles.selectedOptionText,
-                ]}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
+          {/* Selector de hora */}
+          <TouchableOpacity
+            style={styles.selector}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text style={styles.selectorText}>
+              🕒 Hora:{" "}
+              {hora.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </Text>
+          </TouchableOpacity>
+          {showTimePicker && (
+            <DateTimePicker
+              value={hora}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={onChangeHora}
+            />
           )}
-        />
+        </View>
 
-        {/* Fecha y hora */}
-        <Text style={[styles.label, { marginTop: 20 }]}>Fecha y hora:</Text>
-        <TouchableOpacity
-          style={styles.dateButton}
-          onPress={() => setShowPicker(true)}
-        >
-          <Text style={styles.dateText}>
-            {date.toLocaleString([], {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
-          </Text>
+        <TouchableOpacity style={styles.button} onPress={handleAgendar}>
+          <Text style={styles.buttonText}>Agendar cita</Text>
         </TouchableOpacity>
-
-        {showPicker && (
-          <DateTimePicker
-            value={date}
-            mode="datetime"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={onChangeDate}
-            minimumDate={new Date()}
-          />
-        )}
-
-        {/* Confirmar */}
-        <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-          <Text style={styles.confirmText}>Confirmar Cita</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f7f6f8" },
-  container: { flex: 1, padding: 20 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f5f0ff",
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    paddingBottom: 50, // deja espacio por si hay notch o barra inferior
+  },
   title: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B7280",
-    textAlign: "center",
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#2d006b",
     marginBottom: 20,
+    textAlign: "center",
   },
-  label: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 8 },
-  option: {
-    backgroundColor: "#E5E7EB",
-    padding: 10,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  selectedOption: { backgroundColor: "#a413ec" },
-  optionText: { color: "#111827" },
-  selectedOptionText: { color: "white", fontWeight: "700" },
-  dateButton: {
+  card: {
     backgroundColor: "#fff",
-    padding: 14,
-    borderRadius: 10,
+    borderRadius: 15,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
-    marginTop: 5,
   },
-  dateText: { fontSize: 16, color: "#111827", textAlign: "center" },
-  confirmButton: {
+  selector: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 15,
+  },
+  selectorText: { fontSize: 16, color: "#333" },
+  button: {
     backgroundColor: "#a413ec",
-    padding: 16,
     borderRadius: 10,
-    alignItems: "center",
     marginTop: 30,
+    paddingVertical: 18,
+    alignItems: "center",
   },
-  confirmText: { color: "white", fontSize: 16, fontWeight: "700" },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 17,
+  },
 });

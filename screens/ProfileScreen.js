@@ -1,48 +1,108 @@
-// screens/ProfileScreen.js
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+  Image,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { signOut } from "firebase/auth";
+import { auth, db } from "../api/firebase.js";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
-export default function ProfileScreen() {
-  const navigation = useNavigation();
+export default function ProfileScreen({ navigation }) {
+  const [citas, setCitas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [userInfo, setUserInfo] = useState(null);
 
-  const [appointments, setAppointments] = useState([
-    { id: "1", category: "Barbería", service: "Corte Clásico", date: "2025-10-25T10:00:00", status: "Próxima" },
-    { id: "2", category: "Spa", service: "Masaje Relajante", date: "2025-09-30T14:00:00", status: "Pasada" },
-    { id: "3", category: "Salón de Belleza", service: "Manicure", date: "2025-10-20T16:00:00", status: "Hoy" },
-  ]);
+  useEffect(() => {
+    const fetchCitas = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
 
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <Text style={styles.itemText}>{item.category} - {item.service}</Text>
-      <Text style={styles.dateText}>
-        {new Date(item.date).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+        setUserInfo({
+          nombre: user.displayName || "Usuario",
+          email: user.email,
+        });
+
+        const q = query(collection(db, "citas"), where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+        const citasList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setCitas(citasList);
+      } catch (error) {
+        Alert.alert("Error", "No se pudieron cargar tus citas");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCitas();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    Alert.alert("Sesión cerrada");
+    navigation.navigate("Login");
+  };
+
+  const renderCita = ({ item }) => (
+    <View style={styles.card}>
+      <Text style={styles.service}>{item.servicio}</Text>
+      <Text style={styles.detail}>
+        {item.categoria} • {item.profesional}
       </Text>
-      <Text style={styles.status}>{item.status}</Text>
+      <Text style={styles.datetime}>
+        📅 {item.fecha || "Fecha no asignada"} — 🕒 {item.hora}
+      </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={styles.title}>Mi Perfil</Text>
-        <Text style={styles.subtitle}>Samuel Orellana</Text>
+        {/* Encabezado del usuario */}
+        <View style={styles.header}>
+          <Image
+            source={{
+              uri:
+                "https://cdn-icons-png.flaticon.com/512/1077/1077012.png",
+            }}
+            style={styles.avatar}
+          />
+          <View style={styles.userInfo}>
+            <Text style={styles.userName}>{userInfo?.nombre}</Text>
+            <Text style={styles.userEmail}>{userInfo?.email}</Text>
+          </View>
+        </View>
 
-        <Text style={styles.label}>Historial de Citas</Text>
+        <Text style={styles.title}>🧾 Historial de Citas</Text>
 
-        <FlatList
-          data={appointments}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ marginTop: 10 }}
-        />
+        {loading ? (
+          <ActivityIndicator size="large" color="#a413ec" style={{ marginTop: 20 }} />
+        ) : citas.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No tienes citas registradas aún.</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={citas}
+            keyExtractor={(item) => item.id}
+            renderItem={renderCita}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
 
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => navigation.replace("Login")}
-        >
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -50,28 +110,100 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f7f6f8" },
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 26, fontWeight: "800", color: "#111827", textAlign: "center" },
-  subtitle: { textAlign: "center", color: "#6B7280", marginBottom: 20 },
-  label: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  item: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 15,
-    marginVertical: 6,
-    elevation: 2,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f5f0ff",
   },
-  itemText: { fontSize: 16, fontWeight: "600", color: "#111827" },
-  dateText: { color: "#6B7280", marginTop: 4 },
-  status: { marginTop: 4, fontWeight: "700", color: "#a413ec" },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+  userInfo: {
+    flexDirection: "column",
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2d006b",
+  },
+  userEmail: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 3,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#2d006b",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  service: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#a413ec",
+    marginBottom: 5,
+  },
+  detail: {
+    fontSize: 15,
+    color: "#444",
+    marginBottom: 5,
+  },
+  datetime: {
+    fontSize: 14,
+    color: "#555",
+    marginTop: 5,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
+  },
   logoutButton: {
     backgroundColor: "#a413ec",
-    padding: 14,
+    paddingVertical: 15,
     borderRadius: 10,
     alignItems: "center",
     marginTop: 20,
   },
-  logoutText: { color: "white", fontWeight: "700", fontSize: 16 },
+  logoutText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 });
-

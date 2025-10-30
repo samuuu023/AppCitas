@@ -1,77 +1,135 @@
-// Screens/RegisterScreen.js
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../api/firebase.js"; // 👈 tu conexión
 
-export default function RegisterScreen() {
-  const navigation = useNavigation();
+export default function RegisterScreen({ navigation }) {
   const [nombre, setNombre] = useState("");
-  const [correo, setCorreo] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = () => {
-    if (nombre && correo && password) {
-      alert("Cuenta creada con éxito");
-      navigation.replace("AppTabs");
-    } else {
-      alert("Completa todos los campos");
+  const handleRegister = async () => {
+    if (!nombre || !email || !password) {
+      Alert.alert("Error", "Por favor completa todos los campos.");
+      return;
+    }
+
+    try {
+      // 🔐 Crear usuario en Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // 🧾 Crear documento en Firestore (colección "usuarios")
+      await setDoc(doc(db, "usuarios", user.uid), {
+        nombre,
+        correo: email,
+        rol: "usuario",
+        creado: new Date().toISOString(),
+      });
+
+      Alert.alert("Éxito", "Usuario registrado correctamente.");
+      navigation.navigate("Service");
+    } catch (error) {
+      if (error.code === "auth/email-already-in-use") {
+        Alert.alert("Error", "Este correo ya está registrado.");
+      } else if (error.code === "auth/invalid-email") {
+        Alert.alert("Error", "Correo inválido.");
+      } else if (error.code === "auth/weak-password") {
+        Alert.alert("Error", "La contraseña es demasiado débil.");
+      } else {
+        Alert.alert("Error", error.message);
+      }
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crear cuenta</Text>
-      <Text style={styles.subtitle}>Regístrate para agendar tus citas</Text>
+      <Text style={styles.title}>Crear Cuenta</Text>
 
       <TextInput
-        placeholder="Nombre completo"
-        placeholderTextColor="#9CA3AF"
         style={styles.input}
+        placeholder="Nombre completo"
         value={nombre}
         onChangeText={setNombre}
       />
+
       <TextInput
+        style={styles.input}
         placeholder="Correo electrónico"
-        placeholderTextColor="#9CA3AF"
-        style={styles.input}
-        value={correo}
-        onChangeText={setCorreo}
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
       />
+
       <TextInput
-        placeholder="Contraseña"
-        placeholderTextColor="#9CA3AF"
         style={styles.input}
-        secureTextEntry
+        placeholder="Contraseña"
         value={password}
         onChangeText={setPassword}
+        secureTextEntry
       />
 
       <TouchableOpacity style={styles.button} onPress={handleRegister}>
         <Text style={styles.buttonText}>Registrarse</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-      </TouchableOpacity>
+      <Text style={styles.link} onPress={() => navigation.navigate("Login")}>
+        ¿Ya tienes cuenta? Inicia sesión
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f7f6f8", padding: 20 },
-  title: { fontSize: 28, fontWeight: "900", color: "#111827", marginBottom: 10 },
-  subtitle: { fontSize: 16, color: "#6B7280", marginBottom: 25 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 25,
+    textAlign: "center",
+    color: "#111",
+  },
   input: {
-    width: "100%",
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 10,
     padding: 12,
-    backgroundColor: "white",
+    borderRadius: 10,
     marginBottom: 15,
+    fontSize: 16,
   },
-  button: { backgroundColor: "#a413ec", padding: 14, borderRadius: 10, width: "100%", alignItems: "center" },
-  buttonText: { color: "white", fontWeight: "700", fontSize: 16 },
-  link: { marginTop: 15, color: "#a413ec", fontWeight: "500" },
+  button: {
+    backgroundColor: "#a413ec",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  link: {
+    textAlign: "center",
+    color: "#a413ec",
+    marginTop: 20,
+    fontSize: 15,
+  },
 });
